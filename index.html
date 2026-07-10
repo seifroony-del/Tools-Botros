@@ -1,83 +1,78 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #2b2b2b url('https://www.transparenttextures.com/patterns/wood-pattern.png'); font-family: 'Cairo', sans-serif; color: #eee; padding: 20px; }
-        .container { background: #3d3d3d; border: 5px solid #222; border-radius: 15px; padding: 20px; max-width: 600px; margin: auto; }
-        .login-box { max-width: 300px; margin: 100px auto; text-align: center; }
-        h2 { color: #ff9800; font-weight: 900; animation: moveText 3s infinite alternate; }
-        @keyframes moveText { from { transform: translateX(20px); } to { transform: translateX(-20px); } }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        td { padding: 8px; border-bottom: 1px solid #555; }
-        input { width: 50px; background: #222; color: #fff; border: 1px solid #777; text-align: center; padding: 5px; }
-        .btn { cursor: pointer; border: none; border-radius: 4px; padding: 5px 10px; }
-        .save-row { background: #2196f3; color: white; }
-        .del-row { background: #f44336; color: white; }
-        .hidden { display: none; }
+        body { 
+            background: #2b2b2b url('https://www.transparenttextures.com/patterns/wood-pattern.png'); 
+            font-family: 'Cairo', sans-serif; color: #eee; padding: 20px;
+        }
+        .container { 
+            background: #3d3d3d; border: 5px solid #222; border-radius: 15px; padding: 25px;
+            max-width: 800px; margin: auto; box-shadow: 0 10px 30px #000;
+        }
+        h2 { text-align: center; color: #ff9800; text-shadow: 2px 2px 2px #000; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { color: #ff9800; padding: 10px; border-bottom: 2px solid #ff9800; }
+        td { padding: 12px; border-bottom: 1px solid #555; text-align: center; }
+        .qty-btn { padding: 5px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 18px; }
+        .plus { background: #4caf50; color: white; } .minus { background: #f44336; color: white; }
+        input { width: 60px; background: #222; color: #fff; border: 1px solid #777; text-align: center; padding: 8px; border-radius: 5px; }
+        .save-btn { width: 100%; background: #ff9800; color: #000; padding: 15px; margin-top: 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; }
     </style>
 </head>
 <body>
 
-<div id="login-box" class="container login-box">
-    <h2>تسجيل الدخول</h2>
-    <input type="text" id="user" placeholder="المستخدم" style="width: 100%; margin-bottom: 10px;">
-    <input type="password" id="pass" placeholder="كلمة المرور" style="width: 100%; margin-bottom: 10px;">
-    <button class="btn save-row" style="width:100%" onclick="login()">دخول</button>
-</div>
-
-<div id="app-box" class="container hidden">
+<div class="container">
     <h2>مخزن بطاريسو السري ⚙️</h2>
-    <button class="btn del-row" onclick="logout()">خروج</button>
-    <button class="btn save-row" onclick="addRow()">إضافة صنف +</button>
-    <table>
+    <table id="invTable">
+        <thead><tr><th>الصنف</th><th>الكمية</th><th>آخر تحديث</th></tr></thead>
         <tbody id="data-body"></tbody>
     </table>
+    <button class="save-btn" onclick="saveData()">💾 حفظ التغييرات في المخزن</button>
 </div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymvJvDuyjdH3xz5ltIROuL1dHTVW93Io-oSmNpfnLfOZ2qUmgNlVpS3Gl5GGXpom-g/exec";
 
-    function login() { localStorage.setItem("loggedIn", "true"); location.reload(); }
-    function logout() { localStorage.removeItem("loggedIn"); location.reload(); }
-
-    window.onload = () => {
-        if (localStorage.getItem("loggedIn")) {
-            document.getElementById('login-box').classList.add('hidden');
-            document.getElementById('app-box').classList.remove('hidden');
-            loadData();
-        }
-    };
-
     function loadData() {
         fetch(SCRIPT_URL).then(r => r.json()).then(data => {
             const tbody = document.getElementById('data-body');
-            data.slice(1).forEach((row, i) => {
+            tbody.innerHTML = "";
+            data.slice(1).forEach(row => {
+                const icon = row[0].includes('بطارية') ? '🔋' : (row[0].includes('مسمار') ? '🔩' : '⚙️');
                 tbody.innerHTML += `<tr>
-                    <td>${row[0]}</td>
-                    <td><input type="number" value="${row[1]}" id="qty${i}"></td>
+                    <td>${icon} ${row[0]}</td>
+                    <td>
+                        <button class="qty-btn minus" onclick="changeQty(this, -1)">-</button>
+                        <input type="number" value="${row[1]}" class="qty-val">
+                        <button class="qty-btn plus" onclick="changeQty(this, 1)">+</button>
+                    </td>
                     <td>${row[2]}</td>
-                    <td><button class="btn save-row" onclick="updateRow(${i}, 'qty${i}')">حفظ</button></td>
-                    <td><button class="btn del-row" onclick="deleteRow(${i})">مسح</button></td>
                 </tr>`;
             });
         });
     }
 
-    function updateRow(idx, id) {
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: 'update', row: idx, qty: document.getElementById(id).value}) })
-        .then(() => alert("تم التحديث"));
+    function changeQty(btn, val) {
+        let input = btn.parentElement.querySelector('.qty-val');
+        input.value = parseInt(input.value) + val;
     }
 
-    function deleteRow(idx) {
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: 'delete', row: idx}) })
-        .then(() => location.reload());
+    function saveData() {
+        let rows = [];
+        document.querySelectorAll('#data-body tr').forEach(tr => {
+            rows.push({
+                name: tr.cells[0].innerText.replace(/🔋|🔩|⚙️/g, '').trim(),
+                qty: tr.querySelector('.qty-val').value
+            });
+        });
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(rows) })
+            .then(() => { alert("تم التحديث في جوجل شيت!"); location.reload(); });
     }
 
-    function addRow() {
-        let name = prompt("اسم الصنف:");
-        if(name) fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: 'add', name: name, qty: 0}) })
-        .then(() => location.reload());
-    }
+    window.onload = loadData;
 </script>
 </body>
 </html>
