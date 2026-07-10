@@ -40,10 +40,8 @@
 </div>
 
 <script>
-    // رابط الـ Script الخاص بك
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymvJvDuyjdH3xz5ltIROuL1dHTVW93Io-oSmNpfnLfOZ2qUmgNlVpS3Gl5GGXpom-g/exec";
 
-    // التحقق عند فتح الصفحة
     window.onload = function() {
         if (localStorage.getItem("isLoggedIn") === "true") {
             showInventory();
@@ -51,8 +49,6 @@
     };
 
     function login() {
-        // هنا يمكنك إضافة منطق التحقق من اليوزر والباسورد من الشيت 
-        // أو التحقق محلياً إذا كانت البيانات ثابتة
         localStorage.setItem("isLoggedIn", "true");
         showInventory();
     }
@@ -60,15 +56,6 @@
     function showInventory() {
         document.getElementById('login-box').classList.add('hidden');
         document.getElementById('inventory-box').classList.remove('hidden');
-        fetchData();
-    }
-
-    function logout() {
-        localStorage.removeItem("isLoggedIn");
-        location.reload();
-    }
-
-    function fetchData() {
         fetch(SCRIPT_URL + "?action=getData")
             .then(response => response.json())
             .then(data => {
@@ -77,8 +64,12 @@
                 data.forEach(row => {
                     tbody.innerHTML += `<tr><td>⚙️ ${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td></tr>`;
                 });
-            })
-            .catch(err => console.error("Error:", err));
+            });
+    }
+
+    function logout() {
+        localStorage.removeItem("isLoggedIn");
+        location.reload();
     }
 </script>
 
