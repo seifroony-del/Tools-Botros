@@ -2,67 +2,74 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>مخزن بطاريسو السري</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Cairo', sans-serif; background: #121212; color: #fff; padding: 20px; }
-        .container { max-width: 900px; margin: auto; background: #1e1e1e; padding: 20px; border-radius: 15px; }
-        h2 { text-align: center; color: #ff6d00; }
-        .controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-add { background: #7b1fa2; color: white; }
-        .btn-save { background: #388e3c; color: white; }
-        table { width: 100%; border-collapse: collapse; background: #262626; }
-        th, td { padding: 12px; border: 1px solid #333; text-align: center; }
-        input { background: #333; color: white; border: 1px solid #444; padding: 5px; width: 80px; text-align: center; }
-        .icon { font-size: 20px; margin-left: 10px; }
-        .delete-btn { color: #f44336; cursor: pointer; font-size: 18px; }
+        body { 
+            background: #2b2b2b url('https://www.transparenttextures.com/patterns/wood-pattern.png'); 
+            font-family: 'Cairo', sans-serif; color: #eee; padding: 20px;
+        }
+        .container { 
+            background: #3d3d3d; border: 5px solid #222; border-radius: 15px; padding: 25px;
+            max-width: 800px; margin: auto; box-shadow: 0 10px 30px #000;
+        }
+        h2 { text-align: center; color: #ff9800; text-shadow: 2px 2px 2px #000; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { color: #ff9800; padding: 10px; border-bottom: 2px solid #ff9800; }
+        td { padding: 12px; border-bottom: 1px solid #555; text-align: center; }
+        .qty-btn { padding: 5px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 18px; }
+        .plus { background: #4caf50; color: white; } .minus { background: #f44336; color: white; }
+        input { width: 60px; background: #222; color: #fff; border: 1px solid #777; text-align: center; padding: 8px; border-radius: 5px; }
+        .save-btn { width: 100%; background: #ff9800; color: #000; padding: 15px; margin-top: 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>مخزن بطاريسو السري</h2>
-    <div class="controls">
-        <button class="btn-add" onclick="addRow()">إضافة صنف جديد +</button>
-        <button class="btn-save" onclick="saveAll()">حفظ التعديلات من الجدول ☁️</button>
-    </div>
-    <table>
-        <thead>
-            <tr><th>الصنف</th><th>الكمية</th><th>آخر تحديث</th><th>حذف</th></tr>
-        </thead>
+    <h2>مخزن بطاريسو السري ⚙️</h2>
+    <table id="invTable">
+        <thead><tr><th>الصنف</th><th>الكمية</th><th>آخر تحديث</th></tr></thead>
         <tbody id="data-body"></tbody>
     </table>
+    <button class="save-btn" onclick="saveData()">💾 حفظ التغييرات في المخزن</button>
 </div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymvJvDuyjdH3xz5ltIROuL1dHTVW93Io-oSmNpfnLfOZ2qUmgNlVpS3Gl5GGXpom-g/exec";
 
-    // دالة لجلب البيانات وتوزيع الإيموجي بناءً على اسم الصنف
     function loadData() {
-        fetch(SCRIPT_URL + "?action=getData").then(r => r.json()).then(data => {
+        fetch(SCRIPT_URL).then(r => r.json()).then(data => {
             const tbody = document.getElementById('data-body');
             tbody.innerHTML = "";
-            data.forEach((row, i) => {
-                if(i === 0) return;
-                const emoji = row[0].includes('بطارية') ? '🔋' : (row[0].includes('مسمار') ? '🔩' : '⚙️');
+            data.slice(1).forEach(row => {
+                const icon = row[0].includes('بطارية') ? '🔋' : (row[0].includes('مسمار') ? '🔩' : '⚙️');
                 tbody.innerHTML += `<tr>
-                    <td>${emoji} <input value="${row[0]}"></td>
-                    <td><input type="number" value="${row[1]}"></td>
+                    <td>${icon} ${row[0]}</td>
+                    <td>
+                        <button class="qty-btn minus" onclick="changeQty(this, -1)">-</button>
+                        <input type="number" value="${row[1]}" class="qty-val">
+                        <button class="qty-btn plus" onclick="changeQty(this, 1)">+</button>
+                    </td>
                     <td>${row[2]}</td>
-                    <td class="delete-btn" onclick="this.parentElement.remove()">🗑️</td>
                 </tr>`;
             });
         });
     }
 
-    function addRow() {
-        const tbody = document.getElementById('data-body');
-        tbody.innerHTML += `<tr><td>⚙️ <input value="صنف جديد"></td><td><input type="number" value="0"></td><td>جديد</td><td class="delete-btn" onclick="this.parentElement.remove()">🗑️</td></tr>`;
+    function changeQty(btn, val) {
+        let input = btn.parentElement.querySelector('.qty-val');
+        input.value = parseInt(input.value) + val;
     }
 
-    function saveAll() {
-        alert("تم حفظ التعديلات في قاعدة البيانات!");
-        // هنا يتم إضافة منطق إرسال البيانات (POST) لملف الـ Apps Script
+    function saveData() {
+        let rows = [];
+        document.querySelectorAll('#data-body tr').forEach(tr => {
+            rows.push({
+                name: tr.cells[0].innerText.replace(/🔋|🔩|⚙️/g, '').trim(),
+                qty: tr.querySelector('.qty-val').value
+            });
+        });
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(rows) })
+            .then(() => { alert("تم التحديث في جوجل شيت!"); location.reload(); });
     }
 
     window.onload = loadData;
